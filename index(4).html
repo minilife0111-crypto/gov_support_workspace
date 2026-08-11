@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
+<title>정부지원사업 마스터 보드 v4</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.111.0/dist/umd/supabase.min.js"></script>
+<style>
+:root{--bg:#0b1220;--panel:#111827;--card:#162033;--line:#2b3850;--text:#eef2ff;--muted:#9fb0c8;--accent:#60a5fa;--good:#34d399;--warn:#fbbf24;--bad:#fb7185}
+*{box-sizing:border-box} body{margin:0;background:linear-gradient(180deg,#0b1220,#111827 35%,#0b1220);color:var(--text);font-family:system-ui,-apple-system,"Noto Sans KR",sans-serif}
+.wrap{max-width:1240px;margin:auto;padding:16px} header{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:flex-start;margin-bottom:14px}
+h1{margin:0 0 4px;font-size:26px} .sub,.small{color:var(--muted);font-size:12px;line-height:1.55}
+.actions,.filters,.checks{display:flex;gap:7px;flex-wrap:wrap} button,input,select,textarea{font:inherit}
+button{border:1px solid var(--line);background:#152033;color:var(--text);padding:9px 12px;border-radius:10px;font-weight:750;cursor:pointer}
+button:hover{border-color:var(--accent)} .pill{display:inline-flex;gap:7px;align-items:center;border:1px solid var(--line);border-radius:999px;padding:8px 10px;font-size:12px}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--warn)} .dot.on{background:var(--good)}
+.grid{display:grid;grid-template-columns:repeat(5,1fr);gap:9px;margin-bottom:14px} .metric,.panel,.card{border:1px solid var(--line);background:rgba(17,24,39,.96);border-radius:14px}
+.metric{padding:13px} .metric b{display:block;font-size:24px;margin-top:4px} .panel{padding:14px;margin-bottom:14px} .panel h2{font-size:17px;margin:0 0 10px}
+nav{display:flex;gap:7px;overflow:auto;margin-bottom:12px} .tab.active{background:var(--accent);color:#07101f;border-color:var(--accent)}
+.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:10px} .card{padding:13px;background:#151f31} .card h3{font-size:16px;margin:8px 0 6px} .card p{font-size:13px;color:#c5d1e2;line-height:1.5;margin:6px 0}
+.badge{display:inline-block;padding:3px 8px;border-radius:999px;font-size:10px;font-weight:850;margin:1px 3px 1px 0;background:#243554;color:#cfe2ff}
+.badge.fit-top{background:rgba(52,211,153,.15);color:#75efbf} .badge.fit-high{background:rgba(96,165,250,.15);color:#8bc1ff} .badge.fit-mid{background:rgba(251,191,36,.15);color:#ffd469}
+a.notice{color:#dceaff;text-decoration:none;border-bottom:1px dashed #6d8db8} a.notice:hover{color:#8bc1ff}
+.filters input,.filters select,textarea,.modal input,.modal select,.modal textarea{background:#0e1727;color:var(--text);border:1px solid var(--line);border-radius:9px;padding:9px}
+.filters input{min-width:220px;flex:1} .tableWrap{overflow:auto;max-height:590px} table{width:100%;border-collapse:collapse;font-size:12.5px;min-width:1000px}
+th,td{padding:9px 7px;border-bottom:1px solid #22304a;text-align:left;vertical-align:top} th{position:sticky;top:0;background:#111827;color:#c8d5e7;font-size:11px;z-index:2}
+.status{background:#0e1727;color:var(--text);border:1px solid var(--line);border-radius:7px;padding:5px}
+.scoreRow{display:grid;grid-template-columns:145px 1fr 65px;gap:8px;align-items:center;margin:11px 0} .bar{height:9px;background:#0d1624;border:1px solid #22304a;border-radius:99px;overflow:hidden}
+.bar i{display:block;height:100%;background:linear-gradient(90deg,#3b82f6,#60a5fa)} textarea{width:100%;min-height:100px}
+.empty{text-align:center;color:var(--muted);padding:24px} .modalWrap{position:fixed;inset:0;background:rgba(0,0,0,.72);display:none;align-items:center;justify-content:center;z-index:50;padding:14px}
+.modalWrap.open{display:flex} .modal{width:min(700px,100%);max-height:92vh;overflow:auto;background:#101827;border:1px solid var(--line);border-radius:16px;padding:18px}
+.modal h2{margin-top:0} .formGrid{display:grid;grid-template-columns:1fr 1fr;gap:10px} .field{display:flex;flex-direction:column;gap:5px} .field.full{grid-column:1/-1}
+.field label{font-size:11px;color:#b9c7db;font-weight:800} .checks label{padding:7px 9px;border:1px solid var(--line);border-radius:8px;background:#0d1726;font-size:12px}
+.modalActions{display:flex;gap:8px;justify-content:flex-end;margin-top:14px} #authGate{position:fixed;inset:0;z-index:100;background:#0b1220;display:flex;align-items:center;justify-content:center;padding:20px}
+.authBox{width:min(420px,100%);background:#111827;border:1px solid var(--line);border-radius:18px;padding:22px} .authBox h2{margin:0 0 6px} .authBox input{width:100%;margin:6px 0}
+.authRow{display:flex;gap:8px;margin-top:8px} .authMsg{min-height:22px;color:#ffd469;font-size:12px;margin-top:8px} footer{text-align:center;color:var(--muted);font-size:10.5px;padding:8px 0 22px}
+@media(max-width:900px){.grid{grid-template-columns:repeat(2,1fr)}.cards{grid-template-columns:1fr}.formGrid{grid-template-columns:1fr}.field.full{grid-column:auto}}
+
+.authPassWrap{position:relative}
+.authPassWrap input{padding-right:74px}
+.pwToggle{
+  position:absolute;right:8px;top:50%;transform:translateY(-50%);
+  border:0;background:transparent;color:#9fb0c8;padding:5px 7px;
+  font-size:12px;font-weight:800;cursor:pointer
+}
+.pwToggle:hover{color:#eef2ff}
+
+</style>
+</head>
+<body>
+<div id="authGate">
+  <div class="authBox">
+    <h2>정부지원사업 보드 로그인</h2>
+    <div class="sub">BuildBook Supabase 계정으로 로그인합니다. 데이터는 로그인한 계정에만 저장됩니다.</div>
+    <input id="authEmail" type="email" placeholder="이메일"/>
+    <div class="authPassWrap">
+      <input id="authPassword" type="password" placeholder="비밀번호"/>
+      <button id="pwToggleBtn" class="pwToggle" type="button" onclick="togglePassword()" aria-label="비밀번호 표시">보기</button>
+    </div>
+    <div class="authRow"><button onclick="login()">로그인</button><button onclick="signup()">계정 만들기</button></div>
+    <div id="authMsg" class="authMsg"></div>
+  </div>
+</div>
+
+<div class="wrap">
+<header>
+  <div><h1>정부지원사업 마스터 보드 v4</h1><div class="sub">가치숲 · 빌드북 · 셀메이션 · 게임 · 프레임AR<br>한 공고에 여러 프로젝트 연결 · 공식 링크 · Supabase 자동 동기화</div></div>
+  <div class="actions">
+    <span class="pill"><i id="syncDot" class="dot"></i><span id="syncText">연결 대기</span></span>
+    <span class="pill" id="userLabel">-</span>
+    <button onclick="openNotice()">+ 공고 추가</button>
+    <button onclick="pullCloud(true)">새로고침</button>
+    <button onclick="logout()">로그아웃</button>
+  </div>
+</header>
+
+<div id="metrics" class="grid"></div>
+<nav>
+  <button class="tab active" data-tab="dashboard">오늘의 브리핑</button>
+  <button class="tab" data-tab="db">공고 DB</button>
+  <button class="tab" data-tab="projects">프로젝트별</button>
+  <button class="tab" data-tab="history">지원 이력</button>
+  <button class="tab" data-tab="notes">메모</button>
+</nav>
+
+<section id="dashboard" class="page">
+  <div class="panel"><h2>오늘의 TOP PICK</h2><div id="topCards" class="cards"></div></div>
+  <div class="panel"><h2>마감 임박</h2><div id="deadlineList"></div></div>
+</section>
+
+<section id="db" class="page" style="display:none">
+<div class="panel">
+  <h2>공고 DB</h2>
+  <div class="filters">
+    <input id="search" placeholder="사업명·기관·키워드" oninput="renderDB()"/>
+    <select id="projectFilter" onchange="renderDB()"><option value="">전체 프로젝트</option></select>
+    <select id="fitFilter" onchange="renderDB()"><option value="">전체 적합도</option><option>최우선</option><option>높음</option><option>보통</option></select>
+    <select id="stateFilter" onchange="renderDB()"><option value="">전체 상태</option><option>신규</option><option>검토중</option><option>준비중</option><option>신청완료</option><option>대기</option><option>자격확인</option><option>제외</option></select>
+  </div>
+  <div class="tableWrap"><table><thead><tr><th>상태</th><th>가능 프로젝트</th><th>공고</th><th>기관</th><th>지원규모</th><th>마감</th><th>적합도</th><th>판단/다음 행동</th><th></th></tr></thead><tbody id="dbBody"></tbody></table></div>
+</div>
+</section>
+
+<section id="projects" class="page" style="display:none"><div class="panel"><h2>프로젝트별 기회</h2><div id="scores"></div></div></section>
+<section id="history" class="page" style="display:none"><div class="panel"><h2>지원 이력</h2><div class="tableWrap"><table><thead><tr><th>프로젝트</th><th>사업명</th><th>신청일</th><th>금액</th><th>결과</th><th>학습</th></tr></thead><tbody id="histBody"></tbody></table></div></div></section>
+<section id="notes" class="page" style="display:none"><div class="panel"><h2>운영 메모</h2><textarea id="memo" oninput="queueSave()"></textarea><div class="small">메모도 Supabase에 함께 저장됩니다.</div></div></section>
+
+<footer>BuildBook Supabase의 gov_support_workspace 전용 테이블 사용 · RLS 적용 · 로그인 사용자 본인 데이터만 접근</footer>
+</div>
+
+<div id="noticeModal" class="modalWrap"><div class="modal">
+<h2 id="noticeModalTitle">공고 추가</h2>
+<div class="formGrid">
+  <div class="field full"><label>사업명</label><input id="fTitle"/></div>
+  <div class="field"><label>주관기관</label><input id="fAgency"/></div>
+  <div class="field"><label>지원규모/내용</label><input id="fAmount"/></div>
+  <div class="field"><label>마감일</label><input id="fDeadline" type="date"/></div>
+  <div class="field"><label>적합도</label><select id="fFit"><option>최우선</option><option>높음</option><option>보통</option></select></div>
+  <div class="field full"><label>가능 프로젝트 — 중복 선택 가능</label><div id="projectChecks" class="checks"></div></div>
+  <div class="field full"><label>공식 공고 URL</label><input id="fUrl" type="url" placeholder="https://..."/></div>
+  <div class="field full"><label>왜 적합한가</label><textarea id="fWhy"></textarea></div>
+  <div class="field full"><label>다음 행동</label><input id="fNext"/></div>
+</div>
+<div class="modalActions"><button onclick="closeNotice()">취소</button><button onclick="saveNoticeForm()">저장</button></div>
+</div></div>
+
+<script>
+const SUPABASE_URL='https://uyppvflhpgwfgcqvwgtj.supabase.co';
+const SUPABASE_KEY='sb_publishable_5YIJklFgytycaCbW2Sp6vQ_rla2hr0h';
+const sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY,{
+  auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}
+});
+const PROJECTS=['가치숲','빌드북','셀메이션','게임','프레임AR'];
+const LOCAL_V2='gov_support_master_v2';
+let session=null, editId=null, saveTimer=null;
+let data={notices:[],history:[],memo:''};
+
+function esc(s){return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
+function dday(s){if(!s)return null;const t=new Date();t.setHours(0,0,0,0);return Math.ceil((new Date(s+'T00:00:00')-t)/86400000)}
+function fitRank(f){return f==='최우선'?0:f==='높음'?1:2}
+function fitClass(f){return f==='최우선'?'fit-top':f==='높음'?'fit-high':'fit-mid'}
+function badges(ps){return (ps||[]).map(p=>`<span class="badge">${p}</span>`).join('')}
+
+
+function togglePassword(){
+  const input=document.getElementById('authPassword');
+  const btn=document.getElementById('pwToggleBtn');
+  const show=input.type==='password';
+  input.type=show?'text':'password';
+  btn.textContent=show?'숨기기':'보기';
+  btn.setAttribute('aria-label',show?'비밀번호 숨기기':'비밀번호 표시');
+}
+
+async function login(){
+  authMsg.textContent='로그인 중...';
+  const {error}=await sb.auth.signInWithPassword({email:authEmail.value.trim(),password:authPassword.value});
+  authMsg.textContent=error?error.message:'';
+}
+async function signup(){
+  authMsg.textContent='계정 생성 중...';
+  const {data:d,error}=await sb.auth.signUp({email:authEmail.value.trim(),password:authPassword.value});
+  if(error) authMsg.textContent=error.message;
+  else authMsg.textContent=d.session?'계정 생성 및 로그인 완료':'계정이 생성되었습니다. 이메일 인증이 필요한 경우 메일을 확인하세요.';
+}
+async function logout(){await sb.auth.signOut();}
+function setGate(){authGate.style.display=session?'none':'flex';userLabel.textContent=session?.user?.email||'-';}
+
+async function pullCloud(show=false){
+  if(!session)return;
+  setSync('불러오는 중',false);
+  const {data:rows,error}=await sb.from('gov_support_workspace').select('payload,updated_at').eq('workspace_key','main').maybeSingle();
+  if(error){setSync('불러오기 실패',false);if(show)alert(error.message);return}
+  if(rows?.payload){
+    data=rows.payload;
+    if(!Array.isArray(data.notices))data.notices=[];
+    if(!Array.isArray(data.history))data.history=[];
+    if(typeof data.memo!=='string')data.memo='';
+    memo.value=data.memo||'';
+    renderAll(); setSync('클라우드 최신',true);
+    if(show)alert('최신 데이터를 불러왔습니다.');
+  }else{
+    const legacy=localStorage.getItem(LOCAL_V2);
+    if(legacy){
+      try{
+        const old=JSON.parse(legacy);
+        data={notices:old.notices||[],history:old.history||[],memo:'복수 프로젝트 연결을 허용하고 실제 신청 시 가장 승산 높은 프로젝트를 선택한다.'};
+      }catch(e){}
+    } else {
+      const {data:seedRow,error:seedError}=await sb.from('gov_support_seed').select('payload').order('seed_date',{ascending:false}).limit(1).maybeSingle();
+      if(!seedError && seedRow?.payload) data=seedRow.payload;
+    }
+    await pushCloud();
+    memo.value=data.memo||'';
+    renderAll();
+  }
+}
+async function pushCloud(){
+  if(!session)return;
+  setSync('저장 중',false);
+  data.memo=memo.value||data.memo||'';
+  const row={owner_id:session.user.id,workspace_key:'main',payload:data,updated_at:new Date().toISOString()};
+  const {error}=await sb.from('gov_support_workspace').upsert(row,{onConflict:'owner_id,workspace_key'});
+  setSync(error?'저장 실패':'자동 저장됨',!error);
+  if(error)console.error(error);
+}
+function queueSave(){clearTimeout(saveTimer);saveTimer=setTimeout(pushCloud,550);}
+function setSync(txt,on){syncText.textContent=txt;syncDot.classList.toggle('on',on)}
+
+function renderMetrics(){
+  const a=data.notices.filter(x=>x.state!=='제외');
+  const vals=[['유효 공고',a.length],['우선 검토',a.filter(x=>['최우선','높음'].includes(x.fit)).length],['복수 프로젝트',a.filter(x=>(x.projects||[]).length>1).length],['마감 7일',a.filter(x=>{const n=dday(x.deadline);return n!==null&&n>=0&&n<=7}).length],['프로젝트',PROJECTS.length]];
+  metrics.innerHTML=vals.map(v=>`<div class="metric"><span class="small">${v[0]}</span><b>${v[1]}</b></div>`).join('');
+}
+function renderTop(){
+  const a=data.notices.filter(x=>x.state!=='제외').sort((a,b)=>fitRank(a.fit)-fitRank(b.fit)||(dday(a.deadline)??9999)-(dday(b.deadline)??9999)).slice(0,3);
+  topCards.innerHTML=a.length?a.map(x=>`<div class="card">${badges(x.projects)}<span class="badge ${fitClass(x.fit)}">${esc(x.fit)}</span><h3>${x.url?`<a class="notice" href="${esc(x.url)}" target="_blank" rel="noopener">${esc(x.title)} ↗</a>`:esc(x.title)}</h3><p class="small">${esc(x.agency)} · ${esc(x.amount)}</p><p><b>마감:</b> ${esc(x.deadline)} ${dday(x.deadline)>=0?`(D-${dday(x.deadline)})`:''}</p><p><b>판단:</b> ${esc(x.why)}</p><p><b>다음:</b> ${esc(x.next)}</p></div>`).join(''):'<div class="empty">TOP PICK 없음</div>';
+}
+function renderDeadline(){
+  const a=data.notices.filter(x=>{const n=dday(x.deadline);return x.state!=='제외'&&n!==null&&n>=0&&n<=7}).sort((a,b)=>dday(a.deadline)-dday(b.deadline));
+  deadlineList.innerHTML=a.length?a.map(x=>`<p><span class="badge fit-high">D-${dday(x.deadline)}</span> ${badges(x.projects)} <b>${x.url?`<a class="notice" href="${esc(x.url)}" target="_blank" rel="noopener">${esc(x.title)}</a>`:esc(x.title)}</b> — ${esc(x.next)}</p>`).join(''):'<div class="empty">7일 내 마감 없음</div>';
+}
+function renderDB(){
+  const q=(search.value||'').toLowerCase(),p=projectFilter.value,f=fitFilter.value,s=stateFilter.value;
+  const a=data.notices.filter(x=>(!q||[x.title,x.agency,x.why,x.next,(x.projects||[]).join(' ')].join(' ').toLowerCase().includes(q))&&(!p||(x.projects||[]).includes(p))&&(!f||x.fit===f)&&(!s||x.state===s));
+  dbBody.innerHTML=a.length?a.map(x=>`<tr><td><select class="status" onchange="changeState(${x.id},this.value)">${['신규','검토중','준비중','신청완료','대기','자격확인','제외'].map(v=>`<option ${x.state===v?'selected':''}>${v}</option>`).join('')}</select></td><td>${badges(x.projects)}</td><td>${x.url?`<a class="notice" href="${esc(x.url)}" target="_blank" rel="noopener">${esc(x.title)} ↗</a>`:esc(x.title)}</td><td>${esc(x.agency)}</td><td>${esc(x.amount)}</td><td>${esc(x.deadline)}<div class="small">${dday(x.deadline)>=0?'D-'+dday(x.deadline):'마감'}</div></td><td><span class="badge ${fitClass(x.fit)}">${esc(x.fit)}</span></td><td><b>판단</b> ${esc(x.why)}<br><b>다음</b> ${esc(x.next)}</td><td><button onclick="openNotice(${x.id})">수정</button> <button onclick="delNotice(${x.id})">삭제</button></td></tr>`).join(''):'<tr><td colspan="9" class="empty">공고 없음</td></tr>';
+}
+function renderScores(){
+  scores.innerHTML=PROJECTS.map(p=>{const a=data.notices.filter(x=>x.state!=='제외'&&(x.projects||[]).includes(p));let sc=0;a.forEach(x=>sc+=x.fit==='최우선'?2.2:x.fit==='높음'?1.4:.7);sc=Math.min(5,Math.round(sc*10)/10);const act=a.find(x=>['검토중','준비중'].includes(x.state));return `<div class="scoreRow"><b>${p}</b><div class="bar"><i style="width:${sc/5*100}%"></i></div><div>${sc.toFixed(1)}/5</div><div class="small" style="grid-column:1/-1">${a.length}건 · ${act?'오늘 행동: '+esc(act.next):'대기'}</div></div>`}).join('');
+}
+function renderHistory(){
+  histBody.innerHTML=data.history.length?data.history.map(h=>`<tr><td>${badges(h.projects||[h.project])}</td><td>${esc(h.title)}</td><td>${esc(h.date)}</td><td>${esc(h.amount)}</td><td>${esc(h.result)}</td><td>${esc(h.learning)}</td></tr>`).join(''):'<tr><td colspan="6" class="empty">지원 이력 없음</td></tr>';
+}
+function renderAll(){renderMetrics();renderTop();renderDeadline();renderDB();renderScores();renderHistory()}
+
+function openNotice(id=null){
+  editId=id;const x=id?data.notices.find(v=>v.id===id):{title:'',agency:'',amount:'',deadline:'',fit:'높음',projects:[],url:'',why:'',next:'자격조건 확인'};
+  noticeModalTitle.textContent=id?'공고 수정':'공고 추가';fTitle.value=x.title||'';fAgency.value=x.agency||'';fAmount.value=x.amount||'';fDeadline.value=x.deadline||'';fFit.value=x.fit||'높음';fUrl.value=x.url||'';fWhy.value=x.why||'';fNext.value=x.next||'';
+  projectChecks.innerHTML=PROJECTS.map(p=>`<label><input type="checkbox" value="${p}" ${(x.projects||[]).includes(p)?'checked':''}> ${p}</label>`).join('');noticeModal.classList.add('open');
+}
+function closeNotice(){noticeModal.classList.remove('open')}
+function saveNoticeForm(){
+  const ps=[...projectChecks.querySelectorAll('input:checked')].map(x=>x.value);
+  if(!fTitle.value.trim())return alert('사업명을 입력하세요.');
+  if(!ps.length)return alert('가능 프로젝트를 하나 이상 선택하세요.');
+  const old=editId?data.notices.find(x=>x.id===editId):null;
+  const obj={id:editId||Date.now(),state:old?.state||'신규',projects:ps,title:fTitle.value.trim(),agency:fAgency.value.trim(),amount:fAmount.value.trim(),deadline:fDeadline.value,fit:fFit.value,url:fUrl.value.trim(),why:fWhy.value.trim(),next:fNext.value.trim()};
+  if(editId)data.notices[data.notices.findIndex(x=>x.id===editId)]=obj;else data.notices.unshift(obj);
+  closeNotice();renderAll();queueSave();
+}
+function changeState(id,v){data.notices.find(x=>x.id===id).state=v;renderAll();queueSave()}
+function delNotice(id){if(confirm('삭제할까요?')){data.notices=data.notices.filter(x=>x.id!==id);renderAll();queueSave()}}
+
+projectFilter.innerHTML+=PROJECTS.map(p=>`<option>${p}</option>`).join('');
+document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));b.classList.add('active');document.querySelectorAll('.page').forEach(x=>x.style.display='none');document.getElementById(b.dataset.tab).style.display='block'});
+
+sb.auth.onAuthStateChange(async(event,s)=>{
+  session=s;setGate();
+  if(session){await pullCloud(false)}else{data={notices:[],history:[],memo:''};memo.value='';renderAll();setSync('로그인 필요',false)}
+});
+(async()=>{const {data:d}=await sb.auth.getSession();session=d.session;setGate();if(session)await pullCloud(false);else renderAll()})();
+</script>
+</body>
+</html>
